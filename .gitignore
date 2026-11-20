@@ -1,0 +1,10 @@
+# Track code only: everything is ignored unless whitelisted below
+/*
+!/.gitignore
+!/*.py
+!/demo/
+/demo/*
+!/demo/server.py
+!/demo/serve_forever.sh
+!/demo/tunnel_watchdog.sh
+__pycache__/
