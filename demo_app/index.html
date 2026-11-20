@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLINC150 Intent Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* layout: request picker on the left (sticky list), four method cards on the right; stacks to one column on phones */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --fg: #141821;
+  --muted: #566070;
+  --faint: #8a93a2;
+  --line: #dbe0e7;
+  --track: #e8ebf0;
+  --code-bg: #eceff4;
+  --accent: #2a6fd6;
+  --accent-soft: #e2ecfb;
+  --bar: #b6bfcc;
+  --ok: #1a7a45;
+  --ok-soft: #ddf2e5;
+  --bad: #c03636;
+  --bad-soft: #fbe2e2;
+  --warn: #965800;
+  --warn-soft: #fbeed3;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101318; --surface: #181c23; --fg: #eceef3; --muted: #a8b0bd; --faint: #7b8494;
+    --line: #2a3039; --track: #252a33; --code-bg: #232831;
+    --accent: #4f97ec; --accent-soft: #1a2a3f; --bar: #4b5361;
+    --ok: #4cc27f; --ok-soft: #163124; --bad: #ef6b6b; --bad-soft: #391c1e;
+    --warn: #e5a540; --warn-soft: #382b13; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101318; --surface: #181c23; --fg: #eceef3; --muted: #a8b0bd; --faint: #7b8494;
+  --line: #2a3039; --track: #252a33; --code-bg: #232831;
+  --accent: #4f97ec; --accent-soft: #1a2a3f; --bar: #4b5361;
+  --ok: #4cc27f; --ok-soft: #163124; --bad: #ef6b6b; --bad-soft: #391c1e;
+  --warn: #e5a540; --warn-soft: #382b13; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 36px 72px; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.25; text-wrap: balance; }
+h1 { font-size: clamp(26px, 4vw, 36px); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 20px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-size: 12.5px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.lead { color: var(--muted); max-width: 74ch; font-size: 16px; }
+code { font-family: var(--font-data); font-size: 0.88em; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+header { display: grid; gap: 10px; }
+
+.app { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
+
+/* picker */
+.picker { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 4px; max-height: calc(100vh - 40px); overflow-y: auto; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); min-width: 0; }
+.grp-h { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 12px 10px 4px; display: flex; justify-content: space-between; gap: 8px; }
+.grp-h:first-child { padding-top: 6px; }
+.grp-h span { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--faint); }
+.req { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; color: var(--fg); font: inherit; font-size: 14px; line-height: 1.4; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.req:hover { background: var(--track); }
+.req[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.req:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dots { display: inline-flex; gap: 3px; }
+.dot { width: 9px; height: 9px; border-radius: 2px; background: var(--track); border: 1px solid var(--line); }
+.dot.ok { background: var(--ok); border-color: var(--ok); }
+.dot.bad { background: var(--bad); border-color: var(--bad); }
+.dot.ref { background: var(--warn); border-color: var(--warn); }
+.dot.na { background: transparent; border-style: dashed; }
+
+/* result panel */
+.panel { display: grid; gap: 14px; min-width: 0; }
+.query { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: grid; gap: 8px; }
+.query .q { font-size: clamp(19px, 2.6vw, 24px); font-weight: 500; line-height: 1.35; word-break: break-word; }
+.query .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; color: var(--muted); align-items: center; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.card .mn { font-weight: 600; font-size: 15px; }
+.card .md { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.na { background: var(--track); color: var(--muted); }
+.ans { display: grid; gap: 4px; }
+.ans .lab { font-size: 11.5px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.ans .intent { font-family: var(--font-data); font-size: 20px; font-weight: 600; word-break: break-all; }
+.ans .refuse { font-size: 15px; font-weight: 500; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 8px 12px; }
+.ans .none { color: var(--faint); font-size: 14px; border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
+.why { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.why b { color: var(--fg); font-weight: 600; font-family: var(--font-data); font-size: 12.5px; }
+.bars { display: grid; gap: 5px; }
+.bars-note { font-size: 12px; color: var(--muted); }
+.bar { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) 46px; gap: 8px; align-items: center; }
+.bar .bl { font-family: var(--font-data); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .bt { height: 10px; background: var(--track); border-radius: 0 4px 4px 0; position: relative; }
+.bar .bf { position: absolute; inset: 0 auto 0 0; border-radius: 0 4px 4px 0; background: var(--bar); }
+.bar.gold .bf { background: var(--accent); }
+.bar.gold .bl { color: var(--accent); font-weight: 600; }
+.bar .bv { font-family: var(--font-data); font-size: 12px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* live box: only shown when the page is served by server.py */
+.live { display: none; }
+.live.on { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.live input { font: inherit; font-size: 16px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-width: 0; }
+.live input:focus-visible, .live button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.live button { font: inherit; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer; }
+.live button:disabled { opacity: .6; cursor: progress; }
+.live-msg { grid-column: 1 / -1; font-size: 13px; color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+
+/* below */
+section { display: grid; gap: 12px; min-width: 0; }
+.tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+table.t { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.t th, table.t td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 500; color: var(--muted); font-size: 13px; }
+table.t td.n { font-family: var(--font-data); font-size: 13px; white-space: nowrap; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t tr.tot td { font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); max-width: 90ch; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cards.fresh .card { animation: pop .22s ease-out both; }
+  .cards.fresh .card:nth-child(2) { animation-delay: .03s; }
+  .cards.fresh .card:nth-child(3) { animation-delay: .06s; }
+  .cards.fresh .card:nth-child(4) { animation-delay: .09s; }
+  .bar .bf { transition: width .25s ease; }
+}
+@keyframes pop { from { transform: translateY(4px); opacity: .55; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .picker { position: static; max-height: 360px; }
+}
+@media (max-width: 600px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .bar { grid-template-columns: minmax(0, 120px) minmax(0, 1fr) 42px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CS 72-272 · Reliable intent classification with out-of-scope detection</div>
+    <h1>CLINC150 Intent Demo</h1>
+    <p class="lead" id="lead">Pick a request. Each card shows what one method answers: one of the 150 supported intents, or the refusal “This request looks out of scope — I can't handle it reliably.” All outputs were computed in advance.</p>
+  </header>
+
+  <form class="live" id="live" autocomplete="off">
+    <input id="live-text" type="text" maxlength="300" placeholder="Type your own request" aria-label="Type your own request">
+    <button id="live-btn" type="submit">Classify</button>
+    <div class="live-msg" id="live-msg" hidden></div>
+  </form>
+
+  <div class="app">
+    <nav class="picker" id="picker" aria-label="Requests"></nav>
+    <div class="panel" id="panel">
+      <div class="query">
+        <div class="q" id="qtext"></div>
+        <div class="meta"><span id="qexp">Expected: <span id="qgold"></span></span><span id="qgroup"></span></div>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="legend">
+        <span><i class="dot ok"></i>answered correctly or refused correctly</span>
+        <span><i class="dot bad"></i>wrong intent</span>
+        <span><i class="dot ref"></i>refused a supported request</span>
+        <span>Squares in the list follow the card order.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const D = {"methods": [{"name": "TF-IDF + logistic regression", "kind": "cut150", "tau": 0.705, "score": "top intent probability", "desc": "Word and character n-gram TF-IDF on the 150 intents, refuses below a cutoff", "key": "tfidf150"}, {"name": "RoBERTa-base", "kind": "cut150", "tau": 0.79, "score": "top intent probability", "desc": "Fine-tuned on the 150 intents, refuses below a cutoff", "key": "rB"}, {"name": "Zero-shot 3B", "kind": "gen150", "tau": 0.5, "score": "top intent probability", "desc": "Instruction-tuned 3B model, prompted with the 150 intents, no training", "key": "zs150"}, {"name": "LoRA 3B", "kind": "gen150", "tau": 0.92, "score": "top intent probability", "cfg": "r 8, lr 4e-4", "desc": "Same 3B model fine-tuned with LoRA (r 8, lr 4e-4)", "key": "lora150"}], "groups": [{"key": "test_translate", "name": "CLINC150 test set #0–9 (all translate)"}], "items": [{"id": "T0", "group": "test_translate", "text": "how would you say fly in italian", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.9788, "poos": null, "oos_wins": false, "top3": [["translate", 0.9788], ["change_language", 0.0092], ["greeting", 0.0007]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9881, "poos": null, "oos_wins": false, "top3": [["translate", 0.9881], ["spelling", 0.0007], ["change_language", 0.0007]], "ok": true}, "zs150": {"final": "translate", "raw": "translate", "conf": 0.7584, "poos": null, "top3": [["translate", 0.758], ["travel_suggestion", 0.225], ["flight_status", 0.011]], "ok": true}, "lora150": {"final": "translate", "raw": "translate", "conf": 1.0, "poos": null, "top3": [["translate", 1.0], ["change_language", 0.0], ["spelling", 0.0]], "ok": true}}}, {"id": "T1", "group": "test_translate", "text": "what's the spanish word for pasta", "gold": ["translate"], "out": {"tfidf150": {"final": "oos", "raw": "translate", "conf": 0.5456, "poos": null, "oos_wins": false, "top3": [["translate", 0.5456], ["change_language", 0.0419], ["spelling", 0.036]], "top1_only": false, "ok": false}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9868, "poos": null, "oos_wins": false, "top3": [["translate", 0.9868], ["spelling", 0.0012], ["change_language", 0.0008]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.9886, "poos": null, "top3": [["definition", 0.989], ["translate", 0.011], ["spelling", 0.0]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 0.9996, "poos": null, "top3": [["translate", 1.0], ["definition", 0.0], ["spelling", 0.0]], "ok": true}}}, {"id": "T2", "group": "test_translate", "text": "how would they say butter in zambia", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.9492, "poos": null, "oos_wins": false, "top3": [["translate", 0.9492], ["how_busy", 0.0023], ["ingredient_substitution", 0.0022]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9829, "poos": null, "oos_wins": false, "top3": [["translate", 0.9829], ["spelling", 0.0024], ["fun_fact", 0.0009]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.5121, "poos": null, "top3": [["definition", 0.512], ["translate", 0.463], ["recipe", 0.01]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 1.0, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["change_language", 0.0]], "ok": true}}}, {"id": "T3", "group": "test_translate", "text": "how do you say fast in spanish", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.9983, "poos": null, "oos_wins": false, "top3": [["translate", 0.9983], ["change_language", 0.0008], ["change_speed", 0.0003]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9878, "poos": null, "oos_wins": false, "top3": [["translate", 0.9878], ["change_language", 0.001], ["spelling", 0.001]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.9547, "poos": null, "top3": [["definition", 0.955], ["translate", 0.038], ["measurement_conversion", 0.005]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 1.0, "poos": null, "top3": [["translate", 1.0], ["change_language", 0.0], ["spelling", 0.0]], "ok": true}}}, {"id": "T4", "group": "test_translate", "text": "what's the word for trees in norway", "gold": ["translate"], "out": {"tfidf150": {"final": "oos", "raw": "definition", "conf": 0.171, "poos": null, "oos_wins": false, "top3": [["definition", 0.171], ["spelling", 0.1385], ["translate", 0.0726]], "top1_only": false, "ok": false}, "rB": {"final": "translate", "raw": "translate", "conf": 0.8213, "poos": null, "oos_wins": false, "top3": [["translate", 0.8213], ["definition", 0.0795], ["spelling", 0.0257]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 1.0, "poos": null, "top3": [["definition", 1.0], ["translate", 0.0], ["weather", 0.0]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 0.9997, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["definition", 0.0]], "ok": true}}}, {"id": "T5", "group": "test_translate", "text": "how does one say wonderful in german", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.7773, "poos": null, "oos_wins": false, "top3": [["translate", 0.7773], ["change_language", 0.0224], ["restaurant_reviews", 0.0077]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9878, "poos": null, "oos_wins": false, "top3": [["translate", 0.9878], ["spelling", 0.0009], ["change_language", 0.0006]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.9949, "poos": null, "top3": [["definition", 0.995], ["translate", 0.005], ["measurement_conversion", 0.0]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 1.0, "poos": null, "top3": [["translate", 1.0], ["change_language", 0.0], ["spelling", 0.0]], "ok": true}}}, {"id": "T6", "group": "test_translate", "text": "how do they say tacos in mexico", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.9488, "poos": null, "oos_wins": false, "top3": [["translate", 0.9488], ["plug_type", 0.0073], ["recipe", 0.0024]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9857, "poos": null, "oos_wins": false, "top3": [["translate", 0.9857], ["spelling", 0.001], ["fun_fact", 0.0007]], "ok": true}, "zs150": {"final": "translate", "raw": "translate", "conf": 0.9641, "poos": null, "top3": [["translate", 0.964], ["definition", 0.032], ["recipe", 0.002]], "ok": true}, "lora150": {"final": "translate", "raw": "translate", "conf": 1.0, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["change_language", 0.0]], "ok": true}}}, {"id": "T7", "group": "test_translate", "text": "how would one say cruiser in china", "gold": ["translate"], "out": {"tfidf150": {"final": "translate", "raw": "translate", "conf": 0.8689, "poos": null, "oos_wins": false, "top3": [["translate", 0.8689], ["no", 0.0058], ["maybe", 0.0051]], "top1_only": false, "ok": true}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9878, "poos": null, "oos_wins": false, "top3": [["translate", 0.9878], ["spelling", 0.0008], ["change_language", 0.0006]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.5049, "poos": null, "top3": [["definition", 0.505], ["translate", 0.487], ["travel_suggestion", 0.003]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 0.9999, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["change_language", 0.0]], "ok": true}}}, {"id": "T8", "group": "test_translate", "text": "what's the french word you use for potato", "gold": ["translate"], "out": {"tfidf150": {"final": "oos", "raw": "translate", "conf": 0.1862, "poos": null, "oos_wins": false, "top3": [["translate", 0.1862], ["change_language", 0.0773], ["definition", 0.0725]], "top1_only": false, "ok": false}, "rB": {"final": "translate", "raw": "translate", "conf": 0.9868, "poos": null, "oos_wins": false, "top3": [["translate", 0.9868], ["change_language", 0.0016], ["spelling", 0.0007]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 0.9982, "poos": null, "top3": [["definition", 0.998], ["translate", 0.002], ["spelling", 0.0]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 0.9996, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["definition", 0.0]], "ok": true}}}, {"id": "T9", "group": "test_translate", "text": "what would the word for grass be in finland", "gold": ["translate"], "out": {"tfidf150": {"final": "oos", "raw": "definition", "conf": 0.1705, "poos": null, "oos_wins": false, "top3": [["definition", 0.1705], ["translate", 0.0936], ["spelling", 0.0377]], "top1_only": false, "ok": false}, "rB": {"final": "translate", "raw": "translate", "conf": 0.958, "poos": null, "oos_wins": false, "top3": [["translate", 0.958], ["spelling", 0.008], ["definition", 0.0068]], "ok": true}, "zs150": {"final": "definition", "raw": "definition", "conf": 1.0, "poos": null, "top3": [["definition", 1.0], ["translate", 0.0], ["measurement_conversion", 0.0]], "ok": false}, "lora150": {"final": "translate", "raw": "translate", "conf": 0.9999, "poos": null, "top3": [["translate", 1.0], ["spelling", 0.0], ["change_language", 0.0]], "ok": true}}}], "design": "150", "live": true};
+const M = D.methods;
+const REFUSAL = "This request looks out of scope — I can't handle it reliably.";
+const byId = Object.fromEntries(D.items.map(it => [it.id, it]));
+let cur = (D.items.find(it => it.id === 'T1') || D.items[0]).id;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function status(it, o) {
+  if (!o) return 'na';
+  if (o.ok) return 'ok';
+  return o.final === 'oos' ? 'ref' : 'bad';
+}
+function goldText(g) { return g.map(x => x === 'oos' ? 'out of scope' : x).join(' or '); }
+
+function buildPicker() {
+  let h = '';
+  D.groups.forEach(g => {
+    const its = D.items.filter(it => it.group === g.key);
+    if (!its.length) return;
+    const avail = M.filter(m => its.every(it => it.out[m.key])).length;
+    h += `<div class="grp-h">${esc(g.name)}<span>${avail}/${M.length} methods</span></div>`;
+    its.forEach(it => {
+      const dots = M.map(m => `<i class="dot ${status(it, it.out[m.key])}"></i>`).join('');
+      h += `<button class="req" type="button" data-id="${it.id}"><span>${esc(it.text)}</span><span class="dots" aria-hidden="true">${dots}</span></button>`;
+    });
+  });
+  const p = document.getElementById('picker');
+  p.innerHTML = h;
+  p.addEventListener('click', e => {
+    const b = e.target.closest('.req');
+    if (b) show(b.dataset.id, true);
+  });
+  p.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const btns = [...p.querySelectorAll('.req')];
+    const i = btns.findIndex(b => b.dataset.id === cur);
+    const j = Math.max(0, Math.min(btns.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)));
+    e.preventDefault(); btns[j].focus(); show(btns[j].dataset.id, false);
+  });
+}
+
+function tauText(t) {
+  if (t === null || t === undefined) return '—';
+  const dec = (String(t).split('.')[1] || '').length;
+  return Number(t).toFixed(Math.max(2, dec));
+}
+
+function why(m, o) {
+  const t = m.tau;
+  if (m.kind === 'gen') {
+    const pass = o.conf >= t;
+    return `Generated <b>${esc(o.raw)}</b>; 1 − p(oos) = <b>${o.conf.toFixed(4)}</b> ${pass ? '≥' : '<'} τ ${t} → ${pass ? 'answer' : 'refuse'}`;
+  }
+  if (m.kind === 'gen150') {
+    const pass = o.conf >= t;
+    const lead = o.nogen ? `Top intent <b>${esc(o.raw)}</b>` : `Generated <b>${esc(o.raw)}</b>; top intent probability`;
+    return `${lead} = <b>${o.conf.toFixed(4)}</b> ${pass ? '≥' : '<'} τ ${tauText(t)} → ${pass ? 'answer' : 'refuse'}`;
+  }
+  if (o.oos_wins) return `<b>oos</b> has the highest probability (${(o.poos ?? o.conf).toFixed(3)}) → refuse`;
+  if (m.kind === 'argmax151') return `Top label <b>${esc(o.raw)}</b> = <b>${o.conf.toFixed(3)}</b>, not oos → answer (no cutoff)`;
+  const pass = o.conf >= t;
+  let s = `Top intent <b>${esc(o.raw)}</b> = <b>${o.conf.toFixed(3)}</b> ${pass ? '≥' : '<'} τ ${tauText(t)}`;
+  if (o.poos !== null && o.poos !== undefined) s += `; p(oos) = ${o.poos.toFixed(3)}`;
+  return s + ` → ${pass ? 'answer' : 'refuse'}`;
+}
+
+function card(it, m) {
+  const o = it.out[m.key];
+  const head = `<div class="hd"><div><div class="mn">${esc(m.name)}</div><div class="md">${esc(m.desc)}</div></div>`;
+  if (!o && it.live && it.err && it.err[m.key]) return `<div class="card">${head}<span class="pill bad">no answer</span></div><div class="ans"><div class="none">This method's server did not answer (${esc(it.err[m.key])}).</div></div></div>`;
+  if (!o) return it.live
+    ? `<div class="card">${head}<span class="pill na">not connected</span></div><div class="ans"><div class="none">This method is not connected to the live demo yet.</div></div></div>`
+    : `<div class="card">${head}<span class="pill na">not run</span></div><div class="ans"><div class="none">This method has not been run on this request yet.</div></div></div>`;
+  const st = status(it, o);
+  const pill = !it.gold ? '' : st === 'ok' ? '<span class="pill ok">✓ correct</span>' : '<span class="pill bad">✗ wrong</span>';
+  const ans = o.final === 'oos'
+    ? `<div class="ans"><div class="lab">Refused</div><div class="refuse">${REFUSAL}</div></div>`
+    : `<div class="ans"><div class="lab">Answer</div><div class="intent">${esc(o.final)}</div></div>`;
+  const bars = o.top3.map(([lab, p]) => {
+    const w = Math.max(0, Math.min(1, p)) * 100;
+    return `<div class="bar${it.gold && it.gold.includes(lab) ? ' gold' : ''}"><span class="bl" title="${esc(lab)}">${esc(lab)}</span><span class="bt"><span class="bf" style="width:${w}%"></span></span><span class="bv">${p.toFixed(3)}</span></div>`;
+  }).join('');
+  const note = o.top1_only ? '<div class="bars-note">Only the top label\'s probability was reported.</div>' : '';
+  return `<div class="card">${head}${pill}</div>${ans}<div class="why">${why(m, o)}</div><div class="bars" aria-label="Top-3 probabilities">${bars}${note}</div></div>`;
+}
+
+function show(id, scroll) {
+  cur = id;
+  const it = byId[id];
+  document.querySelectorAll('.req').forEach(b => b.setAttribute('aria-current', b.dataset.id === id ? 'true' : 'false'));
+  document.getElementById('qtext').textContent = '“' + it.text + '”';
+  document.getElementById('qexp').hidden = !it.gold;
+  document.getElementById('qgold').innerHTML = (it.gold || []).map(g => `<code>${esc(g === 'oos' ? 'out of scope' : g)}</code>`).join(' or ');
+  document.getElementById('qgroup').textContent = it.live ? 'Your request, classified live' : (D.groups.find(g => g.key === it.group) || {}).name || '';
+  const c = document.getElementById('cards');
+  c.classList.remove('fresh'); void c.offsetWidth;
+  c.innerHTML = M.map(m => card(it, m)).join('');
+  c.classList.add('fresh');
+  if (scroll && matchMedia('(max-width: 860px)').matches) {
+    document.getElementById('panel').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+}
+
+function setupLive() {
+  if (D.live !== true) return;
+  document.getElementById('lead').textContent = "Pick a request or type your own. Each card shows what one method answers: one of the 150 supported intents, or the refusal “This request looks out of scope — I can't handle it reliably.” Listed requests were computed in advance; typed requests are classified live.";
+  const form = document.getElementById('live'), input = document.getElementById('live-text');
+  const btn = document.getElementById('live-btn'), msg = document.getElementById('live-msg');
+  form.classList.add('on');
+  async function run(text) {
+    text = text.trim();
+    if (!text) return;
+    btn.disabled = true; msg.hidden = true;
+    try {
+      const r = await fetch('api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      if (!r.ok) throw new Error(`server answered ${r.status}`);
+      const res = await r.json();
+      const out = res.out || {};
+      byId.live = { id: 'live', text, gold: null, group: null, live: true, err: res.error || {}, out: Object.fromEntries(M.map(m => [m.key, out[m.key] || null])) };
+      show('live', true);
+    } catch (e) {
+      msg.textContent = 'Could not reach the model server (' + e.message + ').';
+      msg.hidden = false;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  form.addEventListener('submit', e => { e.preventDefault(); run(input.value); });
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) { input.value = q; run(q); }
+}
+
+buildPicker();
+show(cur, false);
+setupLive();
+</script>
+</body>
+</html>

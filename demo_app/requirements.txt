@@ -1,0 +1,7 @@
+# CPU is enough. On Windows and Linux, install torch from the CPU index first (much smaller download):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.1
+transformers==4.57.1
+# the TF-IDF model file was saved with these versions and only loads with them
+scikit-learn==1.7.2
+numpy>=2.0
