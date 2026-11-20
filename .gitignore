@@ -8,3 +8,14 @@
 !/demo/serve_forever.sh
 !/demo/tunnel_watchdog.sh
 __pycache__/
+
+# TF-IDF baseline (branch ziyang/tfidf): docs, requirements and small result files
+!/README_tfidf.md
+!/requirements_tfidf.txt
+!/results/
+/results/*
+!/results/tfidf/
+/results/tfidf/*
+!/results/tfidf/*.md
+!/results/tfidf/*.json
+!/results/tfidf/*.png
