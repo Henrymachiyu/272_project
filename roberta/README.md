@@ -1,6 +1,6 @@
 # RoBERTa-base on CLINC150 (OOS-plus)
 
-Note: the code and this README were written with Claude Code (AI assistant) at Junwei's request, and Claude Code also reformatted the code to follow Junwei's coding style.
+Note: the code and this README were written with Claude Code (AI assistant) at Junwei's request. Claude Code later reformatted the code to follow Junwei's coding style, and then restructured it for readability (clearer names, small functions, comments). Both passes were checked against the previous version: identical seed table, error analysis and figure, and bit-identical predicted probabilities in one-epoch training runs of both modes.
 
 ## Setup
 - data: `data/data_oos_plus.json` (original JSON from github.com/clinc/oos-eval, not included here; counts match the proposal: train 15,000 + 250 oos, val 3,000 + 100, test 4,500 + 1,000)
@@ -70,12 +70,20 @@ One run takes about 2 min on one GPU (about 11 s per epoch plus loading). `analy
 ## Loading a trained model
 The team demo uses the 150-class model with cutoff 0.79 (seed 0).
 ```python
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
 path = "runs/m150_s0/model"   # written by: python roberta_clinc.py --mode 150 --out runs/m150_s0 --save_model
-tok = AutoTokenizer.from_pretrained(path); model = AutoModelForSequenceClassification.from_pretrained(path).eval()
-p = torch.softmax(model(**tok("how much has the dow changed today", return_tensors="pt")).logits, -1)[0]
-i = int(p.argmax())          # top intent
-label = "oos" if p[i] < 0.79 else model.config.id2label[i]
-# 151-class model (runs/m151_s0/model): i = int(p[:150].argmax()); refuse if p.argmax() == 150 or p[i] < 0.17
+tok = AutoTokenizer.from_pretrained(path)
+model = AutoModelForSequenceClassification.from_pretrained(path).eval()
+
+enc = tok("how much has the dow changed today", return_tensors="pt")
+with torch.no_grad():
+    probs = torch.softmax(model(**enc).logits, -1)[0]
+
+top = int(probs.argmax())     # most likely intent
+label = "oos" if probs[top] < 0.79 else model.config.id2label[top]
+
+# 151-class model (runs/m151_s0/model, cutoff 0.17): take top = int(probs[:150].argmax()),
+# and refuse if probs.argmax() == 150 (the oos class wins) or probs[top] < 0.17
 ```
